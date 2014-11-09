@@ -68,7 +68,7 @@ public class MainActivity extends ActionBarActivity {
 			unbindService(mConnection);
 			mBound = false;
 		}
-		stopService(new Intent(this.getApplicationContext(), SmsHeadService.class));
+		//stopService(new Intent(this.getApplicationContext(), SmsHeadService.class));
 	}
 
 	public Messenger getmService() {

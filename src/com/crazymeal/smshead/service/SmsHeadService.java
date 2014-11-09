@@ -1,16 +1,14 @@
 package com.crazymeal.smshead.service;
 
-import com.crazymeal.smshead.R;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
-import android.os.Build;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -22,12 +20,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.crazymeal.smshead.R;
+
 public class SmsHeadService extends Service{
 	
 	private WindowManager windowManager;
 	private ImageView deleteZone;
 	private LayoutParams params, deleteParams;
 	private View smsHead;
+	private HashMap<View, LayoutParams> viewList;
 	
 	@Override
 	public IBinder onBind(Intent arg0) {
@@ -37,16 +38,16 @@ public class SmsHeadService extends Service{
 
 	@Override public void onCreate() {
 	    super.onCreate();
-
+	    this.viewList = new HashMap<View, WindowManager.LayoutParams>();
+	    
 	    this.smsHead = LayoutInflater.from(this).inflate(R.layout.sms_head_layout, null);
-	    TextView txt_title = (TextView) this.smsHead.findViewById(R.id.textView_message);
-	    txt_title.setText("TEST");
+	    TextView messageView = (TextView) this.smsHead.findViewById(R.id.textView_message);
+	    TextView senderView = (TextView) this.smsHead.findViewById(R.id.textView_sender);
+	    senderView.setText("Paul");
+	    messageView.setText("Salut henry");
 	    
 	    this.windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-
-	    //this.smsHead = new ImageView(this);
-	    //this.smsHead.setImageResource(R.drawable.ic_message);
-
+	    
 	    this.deleteZone = new ImageView(this);
 	    this.deleteZone.setImageResource(R.drawable.ic_delete);
 	    this.deleteZone.setVisibility(View.INVISIBLE);
@@ -71,7 +72,9 @@ public class SmsHeadService extends Service{
 		    	      case MotionEvent.ACTION_UP:
 		    	    	  if(checkIfHovered()){
 		    	    		  smsHead.setVisibility(View.INVISIBLE);
-		    	    		  windowManager.removeView(smsHead);
+		    	    		  removeView(v);
+		    	    		  if(viewList.size() == 0)
+		    	    			  windowManager.removeView(deleteZone);
 		    	    	  }
 		    	    	  deleteZone.setVisibility(View.INVISIBLE);
 		    	        return true;
@@ -85,10 +88,20 @@ public class SmsHeadService extends Service{
 	    	    return false;
 	    	  }
 	    	});
+	    this.viewList.put(this.smsHead, this.params);
+	    
 	    this.windowManager.addView(this.deleteZone, this.deleteParams);
-	    this.windowManager.addView(this.smsHead, this.params);
+	    //this.windowManager.addView(this.smsHead, this.params);
 	  }
 	
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		for(Entry<View, LayoutParams> v : this.viewList.entrySet()){
+			this.windowManager.addView(v.getKey(), v.getValue());
+		}
+		return super.onStartCommand(intent, flags, startId);
+	}
+
 	@SuppressLint("NewApi")
 	protected boolean checkIfHovered() {
 		boolean hovered = false;
@@ -134,5 +147,9 @@ public class SmsHeadService extends Service{
 		    deleteParams.gravity = Gravity.TOP | Gravity.LEFT;
 		    deleteParams.x = (int) centerX - 64;
 		    deleteParams.y = (int) centerY - 64;
+	}
+	private void removeView(View view){
+		this.windowManager.removeView(view);
+		this.viewList.remove(view);
 	}
 }
