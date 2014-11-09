@@ -13,18 +13,21 @@ import android.os.IBinder;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class SmsHeadService extends Service{
 	
 	private WindowManager windowManager;
-	private ImageView smsHead, deleteZone;
+	private ImageView deleteZone;
 	private LayoutParams params, deleteParams;
+	private View smsHead;
 	
 	@Override
 	public IBinder onBind(Intent arg0) {
@@ -35,10 +38,14 @@ public class SmsHeadService extends Service{
 	@Override public void onCreate() {
 	    super.onCreate();
 
+	    this.smsHead = LayoutInflater.from(this).inflate(R.layout.sms_head_layout, null);
+	    TextView txt_title = (TextView) this.smsHead.findViewById(R.id.textView_message);
+	    txt_title.setText("TEST");
+	    
 	    this.windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
-	    this.smsHead = new ImageView(this);
-	    this.smsHead.setImageResource(R.drawable.ic_message);
+	    //this.smsHead = new ImageView(this);
+	    //this.smsHead.setImageResource(R.drawable.ic_message);
 
 	    this.deleteZone = new ImageView(this);
 	    this.deleteZone.setImageResource(R.drawable.ic_delete);
