@@ -33,6 +33,7 @@ public class SmsHeadService extends Service{
 	private ImageView deleteZone;
 	private LayoutParams params, deleteParams;
 	private View smsHead;
+	private int lastYPosition;
 	private HashMap<View, LayoutParams> viewList;
 	
 	@Override
@@ -45,12 +46,14 @@ public class SmsHeadService extends Service{
 	    super.onCreate();
 	    this.viewList = new HashMap<View, WindowManager.LayoutParams>();
 	    
-	    
+	    /*
 	    this.smsHead = LayoutInflater.from(this).inflate(R.layout.sms_head_layout, null);
 	    TextView messageView = (TextView) this.smsHead.findViewById(R.id.textView_message);
 	    TextView senderView = (TextView) this.smsHead.findViewById(R.id.textView_sender);
 	    senderView.setText("Paul");
 	    messageView.setText("Salut henry");
+	    */
+	    this.lastYPosition = 100;
 	    
 	    this.windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 	    
@@ -59,7 +62,7 @@ public class SmsHeadService extends Service{
 	    this.deleteZone.setVisibility(View.INVISIBLE);
 	    
 	    this.initParameters();
-	    
+	    /*
 	    this.smsHead.setOnTouchListener(new View.OnTouchListener() {
 	    	  private int initialX;
 	    	  private int initialY;
@@ -79,8 +82,6 @@ public class SmsHeadService extends Service{
 		    	    	  if(checkIfHovered()){
 		    	    		  smsHead.setVisibility(View.INVISIBLE);
 		    	    		  removeView(v);
-		    	    		  if(viewList.size() == 0)
-		    	    			  windowManager.removeView(deleteZone);
 		    	    	  }
 		    	    	  deleteZone.setVisibility(View.INVISIBLE);
 		    	        return true;
@@ -95,9 +96,8 @@ public class SmsHeadService extends Service{
 	    	  }
 	    	});
 	    this.viewList.put(this.smsHead, this.params);
-	    
+	    */
 	    this.windowManager.addView(this.deleteZone, this.deleteParams);
-	    //this.windowManager.addView(this.smsHead, this.params);
 	  }
 	
 	
@@ -107,8 +107,6 @@ public class SmsHeadService extends Service{
 		for(Entry<View, LayoutParams> v : this.viewList.entrySet()){
 			this.windowManager.addView(v.getKey(), v.getValue());
 		}
-		
-		//SmsReceiver r = new SmsReceiver();
 		
 		IntentFilter filter = new IntentFilter();
         filter.addAction("android.provider.Telephony.SMS_RECEIVED");
@@ -125,10 +123,10 @@ public class SmsHeadService extends Service{
 	}
 	
 	@SuppressLint("NewApi")
-	protected boolean checkIfHovered() {
+	protected boolean checkIfHovered(View view) {
 		boolean hovered = false;
-		if((this.params.x > (this.deleteParams.x - this.smsHead.getWidth()/2)) && (this.params.x < (this.deleteParams.x + this.deleteZone.getWidth() - this.smsHead.getWidth()/2))){
-			if((this.params.y > (this.deleteParams.y - this.smsHead.getHeight()/2)) && (this.params.y < (this.deleteParams.y + this.deleteZone.getHeight() - this.smsHead.getHeight()/2)))
+		if((this.viewList.get(view).x > (this.deleteParams.x - view.getWidth()/2)) && (this.viewList.get(view).x < (this.deleteParams.x + this.deleteZone.getWidth() - view.getWidth()/2))){
+			if((this.viewList.get(view).y > (this.deleteParams.y - view.getHeight()/2)) && (this.viewList.get(view).y < (this.deleteParams.y + this.deleteZone.getHeight() - view.getHeight()/2)))
 				hovered = true;;
 		}
 		return hovered;
@@ -165,6 +163,7 @@ public class SmsHeadService extends Service{
 		    deleteParams.y = (int) centerY - 64;
 	}
 	public void addView(String sender, String message){
+		
 		LayoutParams tmpParams = new WindowManager.LayoutParams(
 		        WindowManager.LayoutParams.WRAP_CONTENT,
 		        WindowManager.LayoutParams.WRAP_CONTENT,
@@ -173,15 +172,54 @@ public class SmsHeadService extends Service{
 		        PixelFormat.TRANSLUCENT);
 		tmpParams.gravity = Gravity.TOP | Gravity.LEFT;
 		tmpParams.x = 0;
-		tmpParams.y = 300;
+		tmpParams.y = lastYPosition + 100;
 	    
 		View tmpView = LayoutInflater.from(this).inflate(R.layout.sms_head_layout, null);
-	    TextView messageView = (TextView) tmpView.findViewById(R.id.textView_message);
+	    
+		TextView messageView = (TextView) tmpView.findViewById(R.id.textView_message);
 	    TextView senderView = (TextView) tmpView.findViewById(R.id.textView_sender);
 	    senderView.setText(sender);
 	    messageView.setText(message);
+	    
+	    this.viewList.put(tmpView, tmpParams);
+		this.lastYPosition = tmpParams.y;
 		
-		this.viewList.put(tmpView, tmpParams);
+	    tmpView.setOnTouchListener(new View.OnTouchListener() {
+	    	  private int initialX;
+	    	  private int initialY;
+	    	  private float initialTouchX;
+	    	  private float initialTouchY;
+
+			@Override 
+			public boolean onTouch(View v, MotionEvent event) {
+	    		  deleteZone.setVisibility(View.VISIBLE);
+	    		  switch (event.getAction()) {
+		    	      case MotionEvent.ACTION_DOWN:
+		    	        initialX = viewList.get(v).x;
+		    	        initialY = viewList.get(v).y;
+		    	        initialTouchX = event.getRawX();
+		    	        initialTouchY = event.getRawY();
+		    	        return true;
+		    	      case MotionEvent.ACTION_UP:
+		    	    	  if(checkIfHovered(v)){
+		    	    		  v.setVisibility(View.INVISIBLE);
+		    	    		  removeView(v);
+		    	    		  lastYPosition -= 100;
+		    	    	  }
+		    	    	  deleteZone.setVisibility(View.INVISIBLE);
+		    	        return true;
+		    	      case MotionEvent.ACTION_MOVE:
+		    	    	//checkIfHovered(v);
+		    	    	viewList.get(v).x = initialX + (int) (event.getRawX() - initialTouchX);
+		    	    	viewList.get(v).y = initialY + (int) (event.getRawY() - initialTouchY);
+		    	        windowManager.updateViewLayout(v, viewList.get(v));
+		    	        return true;
+	    	    }
+	    	    return false;
+	    	  }
+	    	});
+	    
+		
 		this.windowManager.addView(tmpView, tmpParams);
 	}
 	private void removeView(View view){
@@ -190,43 +228,24 @@ public class SmsHeadService extends Service{
 	}
 	
 	class SmsReceiver extends BroadcastReceiver{
-		private String sender, message;
-		
 		@SuppressLint("NewApi")
 		@Override
 		public void onReceive(Context context, Intent intent) {
 
-			// ---get the SMS message passed in---
 	        Bundle bundle = intent.getExtras();
 	        SmsMessage[] msgs = null;
-	        String str = "";
 	        if (bundle != null) {
-	            // ---retrieve the SMS message received---
 	        	String sender = "", message = "";
 	            Object[] pdus = (Object[]) bundle.get("pdus");
 	            msgs = new SmsMessage[pdus.length];
 	            for (int i = 0; i < msgs.length; i++) {
 	                msgs[i] = SmsMessage.createFromPdu((byte[])    pdus[i]);
-	                str += "SMS from " + msgs[i].getOriginatingAddress();
-	                str += " :";
-	                str += msgs[i].getMessageBody().toString();
-	                str += "\n";
-	                
+
 	                sender += msgs[i].getOriginatingAddress();
 	                message += msgs[i].getMessageBody().toString();
 	            }
-	            Toast.makeText(context, "sender: " + sender + "mes: " + message, Toast.LENGTH_SHORT).show();
 	            addView(sender, message);
-	            // ---display the new SMS message---
 	        }
-		}
-		
-		public String getSender() {
-			return sender;
-		}
-
-		public String getMessage() {
-			return message;
 		}
 	}
 }
