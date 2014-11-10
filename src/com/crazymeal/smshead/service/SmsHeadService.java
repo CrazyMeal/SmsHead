@@ -62,41 +62,6 @@ public class SmsHeadService extends Service{
 	    this.deleteZone.setVisibility(View.INVISIBLE);
 	    
 	    this.initParameters();
-	    /*
-	    this.smsHead.setOnTouchListener(new View.OnTouchListener() {
-	    	  private int initialX;
-	    	  private int initialY;
-	    	  private float initialTouchX;
-	    	  private float initialTouchY;
-
-			@Override public boolean onTouch(View v, MotionEvent event) {
-	    		  deleteZone.setVisibility(View.VISIBLE);
-	    		  switch (event.getAction()) {
-		    	      case MotionEvent.ACTION_DOWN:
-		    	        initialX = params.x;
-		    	        initialY = params.y;
-		    	        initialTouchX = event.getRawX();
-		    	        initialTouchY = event.getRawY();
-		    	        return true;
-		    	      case MotionEvent.ACTION_UP:
-		    	    	  if(checkIfHovered()){
-		    	    		  smsHead.setVisibility(View.INVISIBLE);
-		    	    		  removeView(v);
-		    	    	  }
-		    	    	  deleteZone.setVisibility(View.INVISIBLE);
-		    	        return true;
-		    	      case MotionEvent.ACTION_MOVE:
-		    	    	checkIfHovered();
-		    	        params.x = initialX + (int) (event.getRawX() - initialTouchX);
-		    	        params.y = initialY + (int) (event.getRawY() - initialTouchY);
-		    	        windowManager.updateViewLayout(smsHead, params);
-		    	        return true;
-	    	    }
-	    	    return false;
-	    	  }
-	    	});
-	    this.viewList.put(this.smsHead, this.params);
-	    */
 	    this.windowManager.addView(this.deleteZone, this.deleteParams);
 	  }
 	
@@ -111,6 +76,7 @@ public class SmsHeadService extends Service{
 		IntentFilter filter = new IntentFilter();
         filter.addAction("android.provider.Telephony.SMS_RECEIVED");
         filter.addCategory("com.crazymeal.smshead");
+        filter.setPriority(1000);
         this.registerReceiver(new SmsReceiver(), filter);
         
 		return super.onStartCommand(intent, flags, startId);
