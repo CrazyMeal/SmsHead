@@ -14,6 +14,7 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.telephony.SmsMessage;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -31,8 +32,7 @@ public class SmsHeadService extends Service{
 	
 	private WindowManager windowManager;
 	private ImageView deleteZone;
-	private LayoutParams params, deleteParams;
-	private View smsHead;
+	private LayoutParams deleteParams;
 	private int lastYPosition;
 	private HashMap<View, LayoutParams> viewList;
 	
@@ -46,13 +46,6 @@ public class SmsHeadService extends Service{
 	    super.onCreate();
 	    this.viewList = new HashMap<View, WindowManager.LayoutParams>();
 	    
-	    /*
-	    this.smsHead = LayoutInflater.from(this).inflate(R.layout.sms_head_layout, null);
-	    TextView messageView = (TextView) this.smsHead.findViewById(R.id.textView_message);
-	    TextView senderView = (TextView) this.smsHead.findViewById(R.id.textView_sender);
-	    senderView.setText("Paul");
-	    messageView.setText("Salut henry");
-	    */
 	    this.lastYPosition = 100;
 	    
 	    this.windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -84,38 +77,49 @@ public class SmsHeadService extends Service{
 
 	@Override public void onDestroy(){
 		super.onDestroy();
-		if(smsHead != null) this.windowManager.removeView(this.smsHead);
 		if(deleteZone != null) this.windowManager.removeView(this.deleteZone);
+		if(this.viewList.size() != 0){
+			for(View v : this.viewList.keySet()){
+				this.windowManager.removeView(v);
+			}
+		}
 	}
 	
 	@SuppressLint("NewApi")
 	protected boolean checkIfHovered(View view) {
 		boolean hovered = false;
-		if((this.viewList.get(view).x > (this.deleteParams.x - view.getWidth()/2)) && (this.viewList.get(view).x < (this.deleteParams.x + this.deleteZone.getWidth() - view.getWidth()/2))){
-			if((this.viewList.get(view).y > (this.deleteParams.y - view.getHeight()/2)) && (this.viewList.get(view).y < (this.deleteParams.y + this.deleteZone.getHeight() - view.getHeight()/2)))
-				hovered = true;;
+		int leftBorder = this.viewList.get(view).x - 100;
+		int rightBorder = leftBorder + view.getWidth() + 200;
+		int topBorder = this.viewList.get(view).y + view.getHeight() - 100;
+		int bottomBorder = topBorder + 200;
+		
+		int leftDelete = this.deleteParams.x;
+		int rightDelete = leftDelete + this.deleteZone.getWidth();
+		int topDelete = this.deleteParams.y;
+		int bottomDelete = topDelete + this.deleteZone.getHeight();
+
+		Log.d("HOVER","---------- " + topBorder + " ----------");
+		Log.d("HOVER","|                         |");
+		Log.d("HOVER",leftBorder+ "                         " + rightBorder);
+		Log.d("HOVER","|                         |");
+		Log.d("HOVER","---------- " + bottomBorder + " ----------");
+		if((leftDelete >  leftBorder) && (rightDelete < rightBorder)){
+			if((topDelete < topBorder) && (bottomDelete < bottomBorder)){
+				hovered = true;
+			}
 		}
+		
 		return hovered;
 	}
 	
 	@SuppressLint("NewApi")
 	public void initParameters(){
-		this.params = new WindowManager.LayoutParams(
-		        WindowManager.LayoutParams.WRAP_CONTENT,
-		        WindowManager.LayoutParams.WRAP_CONTENT,
-		        WindowManager.LayoutParams.TYPE_PHONE,
-		        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-		        PixelFormat.TRANSLUCENT);
 		    this.deleteParams = new WindowManager.LayoutParams(
 			        WindowManager.LayoutParams.WRAP_CONTENT,
 			        WindowManager.LayoutParams.WRAP_CONTENT,
 			        WindowManager.LayoutParams.TYPE_PHONE,
 			        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
 			        PixelFormat.TRANSLUCENT);
-		    
-		    params.gravity = Gravity.TOP | Gravity.LEFT;
-		    params.x = 0;
-		    params.y = 100;
 		    
 		    
 		    Display display = this.windowManager.getDefaultDisplay();
