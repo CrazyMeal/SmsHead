@@ -23,6 +23,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -145,7 +146,8 @@ public class SmsHeadService extends Service{
 		tmpParams.y = lastYPosition + 100;
 	    
 		View tmpView = LayoutInflater.from(this).inflate(R.layout.sms_head_layout, null);
-	    
+	    LinearLayout messageLayout = (LinearLayout) tmpView.findViewById(R.id.linearLayout_message);
+	    messageLayout.setVisibility(View.GONE);
 		TextView messageView = (TextView) tmpView.findViewById(R.id.textView_message);
 	    TextView senderView = (TextView) tmpView.findViewById(R.id.textView_sender);
 	    senderView.setText(sender);
@@ -154,6 +156,31 @@ public class SmsHeadService extends Service{
 	    this.viewList.put(tmpView, tmpParams);
 		this.lastYPosition = tmpParams.y;
 		
+		tmpView.setOnLongClickListener(new View.OnLongClickListener() {
+			
+			@Override
+			public boolean onLongClick(View v) {
+				LinearLayout messageLayout = (LinearLayout) v.findViewById(R.id.linearLayout_message);
+				if(messageLayout.isShown())
+					messageLayout.setVisibility(View.GONE);
+				return false;
+			}
+		});
+		tmpView.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				LinearLayout messageLayout = (LinearLayout) v.findViewById(R.id.linearLayout_message);
+				if(messageLayout.getVisibility() == View.GONE){
+					messageLayout.setVisibility(View.VISIBLE);
+				}
+				else {
+					messageLayout.setVisibility(View.GONE);
+				}
+			}
+		});
+		
+		
 	    tmpView.setOnTouchListener(new View.OnTouchListener() {
 	    	  private int initialX;
 	    	  private int initialY;
@@ -161,14 +188,14 @@ public class SmsHeadService extends Service{
 	    	  private float initialTouchY;
 
 			@Override 
-			public boolean onTouch(View v, MotionEvent event) {
-	    		  deleteZone.setVisibility(View.VISIBLE);
+			public boolean onTouch(View v, MotionEvent event) {  
 	    		  switch (event.getAction()) {
 		    	      case MotionEvent.ACTION_DOWN:
 		    	        initialX = viewList.get(v).x;
 		    	        initialY = viewList.get(v).y;
 		    	        initialTouchX = event.getRawX();
 		    	        initialTouchY = event.getRawY();
+		    	        v.performClick();
 		    	        return true;
 		    	      case MotionEvent.ACTION_UP:
 		    	    	  if(checkIfHovered(v)){
@@ -179,7 +206,8 @@ public class SmsHeadService extends Service{
 		    	    	  deleteZone.setVisibility(View.INVISIBLE);
 		    	        return true;
 		    	      case MotionEvent.ACTION_MOVE:
-		    	    	//checkIfHovered(v);
+		    	    	deleteZone.setVisibility(View.VISIBLE);
+		    	    	v.performLongClick();
 		    	    	viewList.get(v).x = initialX + (int) (event.getRawX() - initialTouchX);
 		    	    	viewList.get(v).y = initialY + (int) (event.getRawY() - initialTouchY);
 		    	        windowManager.updateViewLayout(v, viewList.get(v));
